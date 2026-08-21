@@ -31,9 +31,18 @@ def main():
     missing = []
     for r in records:
         lat, lng = r.get("lat"), r.get("lng")
-        if lat is None and str(r["no"]) in extra_by_no:
-            entry = extra_by_no[str(r["no"])]
+        address, phone = r["address"], r["phone"]
+        entry = extra_by_no.get(str(r["no"]))
+        if entry:
+            # lat/lng가 있으면(=지오코딩 성공) extra는 "확인된 정정"이다 —
+            # 원본 주소가 이전 전 옛 주소로 남아있는 경우(예: 강서구가족센터
+            # 1호점, 2026-08-22 제보) 실사용자 제보로 주소·전화·좌표를 덮어쓴다.
+            # lat/lng가 없으면(=지오코딩 실패) 기존과 같이 좌표만 채운다.
             lat, lng = entry["lat"], entry["lng"]
+            if "address" in entry:
+                address = entry["address"]
+            if "phone" in entry:
+                phone = entry["phone"]
         if lat is None:
             missing.append(r["org"])
             continue
@@ -41,9 +50,9 @@ def main():
             "id": int(r["no"]) if str(r["no"]).isdigit() else len(items) + 1,
             "sido": r["sido"],
             "sigungu": r["sigungu"],
-            "address": r["address"],
+            "address": address,
             "org": r["org"],
-            "phone": r["phone"],
+            "phone": phone,
             "lat": round(lat, 6),
             "lng": round(lng, 6),
         })
