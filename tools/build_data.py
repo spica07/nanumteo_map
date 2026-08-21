@@ -18,17 +18,22 @@ OUT = ROOT / "assets" / "js" / "data.js"
 
 def main():
     records = json.loads(SRC.read_text(encoding="utf-8"))
-    extra_by_org = {}
+    # org(운영기관명) 하나로 키를 잡으면 같은 운영기관이 지점마다 여러 번
+    # 등장할 때(예: 울산북구가족센터가 서로 다른 주소로 2건) 어느 지점인지
+    # 구분할 수 없어 잘못된 좌표가 다른 지점에도 섞여 들어간다. 원본 CSV의
+    # 연번(no)은 행마다 유일하므로 이걸로 키를 잡는다.
+    extra_by_no = {}
     if EXTRA.exists():
         extra = json.loads(EXTRA.read_text(encoding="utf-8"))
-        extra_by_org = {e["org"]: e for e in extra.get("items", [])}
+        extra_by_no = {str(e["no"]): e for e in extra.get("items", [])}
 
     items = []
     missing = []
     for r in records:
         lat, lng = r.get("lat"), r.get("lng")
-        if lat is None and r["org"] in extra_by_org:
-            lat, lng = extra_by_org[r["org"]]["lat"], extra_by_org[r["org"]]["lng"]
+        if lat is None and str(r["no"]) in extra_by_no:
+            entry = extra_by_no[str(r["no"])]
+            lat, lng = entry["lat"], entry["lng"]
         if lat is None:
             missing.append(r["org"])
             continue
@@ -42,6 +47,16 @@ def main():
             "lat": round(lat, 6),
             "lng": round(lng, 6),
         })
+
+    # 원본 컬럼명이 바뀌는 등으로 파이프라인이 조용히 거의 빈 데이터를
+    # 만들어내는 사고를 막는 최소 안전장치. 지오코딩 실패는 정상적으로도
+    # 몇 건씩 나오지만(주소 오탈자 등), 90% 밑으로 떨어지면 뭔가 근본적으로
+    # 잘못됐다는 신호다.
+    if records and len(items) < 0.9 * len(records):
+        raise RuntimeError(
+            f"결과가 너무 적습니다: {len(items)}/{len(records)} — "
+            "원본 컬럼명이 바뀌었을 수 있습니다"
+        )
 
     items.sort(key=lambda x: (x["sido"], x["sigungu"], x["org"]))
     sidos = sorted({i["sido"] for i in items})

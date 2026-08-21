@@ -71,6 +71,17 @@ def kakao_address(query):
 
 def main():
     rows = list(csv.DictReader(SRC.open(encoding="cp949")))
+    # "주소(도로명) "과 "주소(도로명)" 둘 다 없으면(예: data.go.kr이 컬럼명을
+    # 바꿈) r.get(...) or r.get(...) or "" 가 모든 행에서 조용히 빈 문자열을
+    # 반환해 430건이 전부 지오코딩 실패로 빠진다. 미리 걸러낸다.
+    if rows:
+        first_keys = set(rows[0].keys())
+        if "주소(도로명) " not in first_keys and "주소(도로명)" not in first_keys:
+            raise RuntimeError(
+                "CSV에서 '주소(도로명)' 컬럼을 찾을 수 없습니다 — "
+                f"실제 컬럼명: {sorted(first_keys)} "
+                "(data.go.kr이 컬럼명을 바꿨을 수 있습니다)"
+            )
     geocoded = failed = 0
     out = []
     for r in rows:

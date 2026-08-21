@@ -38,6 +38,18 @@ def main():
 
     url = f"{DOWNLOAD_BASE}?atchFileId={atch_file_id}&fileDetailSn={detail_sn}&insertDataPrcus=N"
     data = fetch(url)
+
+    # 로그인 만료·오류 페이지가 CSV 대신 내려오면 HTML이 온다. 확장자만 믿고
+    # 그대로 저장하면 다음 단계(geocode.py)가 이걸 CSV인 척 읽어 조용히
+    # 망가진다. 첫 바이트만 봐도 걸러진다.
+    head = data[:100].lstrip().lower()
+    if head.startswith(b"<!doctype") or head.startswith(b"<html"):
+        raise RuntimeError(
+            "CSV 대신 HTML 페이지가 내려왔습니다 — 로그인 만료나 오류 페이지일 "
+            "수 있습니다. https://www.data.go.kr/data/15055830/fileData.do 를 "
+            "직접 열어 확인하세요."
+        )
+
     OUT.write_bytes(data)
     print(f"저장 완료: {len(data):,} bytes -> {OUT}")
 
