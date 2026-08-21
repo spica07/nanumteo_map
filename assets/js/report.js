@@ -16,16 +16,25 @@
   }
 
   /* ---------- 핵심 지표 타일 ----------
-     Task 4가 만든 NANUMTEO_META.counts 는 total(원본 행 수)과
-     제외_좌표없음(지오코딩 실패로 뺀 건수)만 갖는다. */
+     Task 4(tools/build_data.py)가 만든 NANUMTEO_META.counts.total 은
+     "원본 전체"가 아니라 좌표 확보에 성공해 지도에 실제로 실린 건수다
+     (build_data.py: counts.total = len(items), 즉 NANUMTEO.length 와 같은 값).
+     원본(지오코딩 이전) 전체 건수는 여기에 제외_좌표없음 을 다시 더해야
+     나온다 — 이 리포트가 "수집·정제" 과정을 보여주는 페이지인 만큼
+     원본 전체(430)와 실제 반영 건수(426)를 서로 다른 숫자로 보여줘야
+     한다. */
   var sidoSet = {};
   NANUMTEO.forEach(function (f) { sidoSet[f.sido] = true; });
   var sidoCount = Object.keys(sidoSet).length;
 
+  var included = counts.total != null ? counts.total : NANUMTEO.length;
+  var excluded = counts['제외_좌표없음'] != null ? counts['제외_좌표없음'] : 0;
+  var rawTotal = included + excluded;
+
   var tiles = [
-    { num: NANUMTEO.length, lbl: '지도에 표시된 곳' },
-    { num: counts.total != null ? counts.total : NANUMTEO.length, lbl: '원본 전체' },
-    { num: counts['제외_좌표없음'] != null ? counts['제외_좌표없음'] : 0, lbl: '제외 (좌표 없음)' },
+    { num: rawTotal, lbl: '원본 전체' },
+    { num: included, lbl: '지도에 표시된 곳' },
+    { num: excluded, lbl: '제외 (좌표 없음)' },
     { num: sidoCount, lbl: '시도 수' }
   ];
   document.getElementById('statTiles').innerHTML = tiles.map(function (t) {
