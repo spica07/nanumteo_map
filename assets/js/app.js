@@ -4,6 +4,7 @@
 
   var NANUMTEO = window.NANUMTEO || [];
   var NANUMTEO_META = window.NANUMTEO_META || {};
+  var NANUMTEO_SIDOS = window.NANUMTEO_SIDOS || [];
 
   /* 마커 색은 디자인 시스템이 소유한다. 유형 필터가 없으므로(스펙 5절)
      모든 마커를 단일 색으로 그린다. */
@@ -13,8 +14,16 @@
   }
   var MARKER_COLOR = cssVar('--sign', '#6E3B1F');
 
-  var SIDO_ORDER = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
-    '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+  /* 지리 순서로 정렬한 고정 목록이 기본이다. 다만 실제 데이터(NANUMTEO_SIDOS,
+     build_data.py 가 원본에서 뽑은 시도 집합)에 이 목록에 없는 값이 있으면
+     — 예: 광주+전남 시도 통합처럼 새 시도명이 생기는 경우 — 조용히 빠지지
+     않도록 목록 끝에 이어 붙인다. */
+  var SIDO_ORDER = (function () {
+    var base = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+      '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+    var unknown = NANUMTEO_SIDOS.filter(function (s) { return base.indexOf(s) === -1; });
+    return base.concat(unknown);
+  })();
   var SIDO_VIEW = {
     '': { center: [36.30, 127.80], zoom: 7 },
     '서울': { center: [37.5642, 126.99], zoom: 11 },
@@ -214,6 +223,18 @@
     return '<div class="detail-item"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>';
   }
 
+  /* 전화번호는 "NN-NNN-NNNN(내선)", "NNN-NNN-NNNN~N" 같은 형태가 섞여 있다.
+     tel: 링크는 괄호(내선)나 물결(~) 뒤를 잘라 숫자만 남기고, 화면에는
+     원문 그대로를 보여준다. */
+  function phoneRow(phone) {
+    if (!phone) return '';
+    var digits = phone.split(/[(~]/)[0].replace(/[^0-9]/g, '');
+    var v = digits
+      ? '<a class="tel-link" href="tel:' + digits + '">' + esc(phone) + '</a>'
+      : esc(phone);
+    return '<div class="detail-item"><span class="k">전화</span><span class="v">' + v + '</span></div>';
+  }
+
   window.openFacilityModal = function (id) {
     var f = NANUMTEO.find(function (x) { return x.id === id; });
     if (!f) return;
@@ -231,7 +252,7 @@
         detailRow('시군구', f.sigungu) +
         detailRow('주소', f.address) +
         detailRow('운영기관', f.org) +
-        detailRow('전화', f.phone) +
+        phoneRow(f.phone) +
       '</div>' +
       '<p class="notice">운영시간과 이용 방법은 운영기관에 직접 문의하세요.</p>' +
       '<div class="modal-links">' +

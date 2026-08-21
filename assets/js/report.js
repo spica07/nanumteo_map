@@ -4,10 +4,18 @@
 
   var NANUMTEO = window.NANUMTEO || [];
   var NANUMTEO_META = window.NANUMTEO_META || {};
+  var NANUMTEO_SIDOS = window.NANUMTEO_SIDOS || [];
   var counts = NANUMTEO_META.counts || {};
 
-  var SIDO_ORDER = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
-    '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+  /* 지리 순서로 정렬한 고정 목록이 기본이다. 실제 데이터(NANUMTEO_SIDOS)에
+     이 목록에 없는 시도명이 있으면 — 예: 광주+전남 시도 통합처럼 새 시도명이
+     생기는 경우 — 막대 차트·표에서 조용히 빠지지 않도록 끝에 이어 붙인다. */
+  var SIDO_ORDER = (function () {
+    var base = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+      '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+    var unknown = NANUMTEO_SIDOS.filter(function (s) { return base.indexOf(s) === -1; });
+    return base.concat(unknown);
+  })();
 
   function esc(s) {
     return String(s == null ? '' : s)

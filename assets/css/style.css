@@ -544,6 +544,7 @@ body {
 .detail-item:last-child { border-bottom: none; }
 .detail-item .k { color: var(--ink-muted); }
 .detail-item .v { color: var(--ink); word-break: break-word; }
+.tel-link { color: var(--sign); text-decoration: underline; text-underline-offset: 2px; }
 
 .modal-links { display: flex; flex-wrap: wrap; gap: 8px; }
 .link-btn {
