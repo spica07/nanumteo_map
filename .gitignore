@@ -1,1 +1,8 @@
 .worktrees/
+.env
+node_modules/
+tools/*.csv
+tools/*.json
+!tools/kakao_cache.json
+!tools/nanumteo_extra.json
+.DS_Store
