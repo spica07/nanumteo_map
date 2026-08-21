@@ -5,6 +5,7 @@ assets/js/data.js 를 생성한다. 430곳 규모라 museum_map처럼 객체 배
 """
 import json
 import sys
+from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
@@ -66,6 +67,19 @@ def main():
             f"결과가 너무 적습니다: {len(items)}/{len(records)} — "
             "원본 컬럼명이 바뀌었을 수 있습니다"
         )
+
+    # 같은 운영기관명이 지점마다 여러 번 나오면(강서구가족센터가 대표적)
+    # 화면에서 구분이 안 된다. 원본 연번(id) 순서를 지점 번호로 삼아
+    # "OO가족센터 1호점"처럼 표시명을 붙인다 — 실제 공식 지점 번호와는
+    # 다를 수 있지만(예: 2호점이 실제로는 별도 이름의 나눔터인 경우도
+    # 있음, 2026-08-22 강서구 사례로 확인) 목록에서 최소한 서로 다른
+    # 곳임을 알 수 있게 하는 게 목적이다.
+    org_counts = Counter(i["org"] for i in items)
+    branch_seen = defaultdict(int)
+    for i in sorted(items, key=lambda x: x["id"]):
+        if org_counts[i["org"]] > 1:
+            branch_seen[i["org"]] += 1
+            i["org"] = f'{i["org"]} {branch_seen[i["org"]]}호점'
 
     items.sort(key=lambda x: (x["sido"], x["sigungu"], x["org"]))
     sidos = sorted({i["sido"] for i in items})
