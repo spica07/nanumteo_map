@@ -6,3 +6,7 @@ tools/*.json
 !tools/kakao_cache.json
 !tools/nanumteo_extra.json
 .DS_Store
+.impeccable/
+docs/
+tools/
+.claude/
